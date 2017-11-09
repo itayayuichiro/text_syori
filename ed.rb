@@ -12,31 +12,47 @@ class Ed
     end
   end
   def read(str)
-      eval(str)
+    eval(str)
   end
   def eval(str)
-    unless ['a','c','d','g','i','j','n','p','q','w','wq','','=','0','1','2','3','4','5','6'].include?(str)
+    addr = '(?:\d+|[.$,;]|\/.*\/)'
+    cmnd = '(wq|[acdgijnpqrw=]|\z)'
+    prmt = '(.*)'
+    unless str.match(/\A(#{addr}(,#{addr})?)?#{cmnd}(#{prmt})?\z/)
       p "?"
     else
-      if str == 'q'
+      address = str.match(/\A(#{addr}(,#{addr})?)?#{cmnd}(#{prmt})?\z/)[1]
+      address2 = str.match(/\A(#{addr}(,#{addr})?)?#{cmnd}(#{prmt})?\z/)[2]
+      cmd = str.match(/\A(#{addr}(,#{addr})?)?#{cmnd}(#{prmt})?\z/)[3]
+      prin = str.match(/\A(#{addr}(,#{addr})?)?#{cmnd}(#{prmt})?\z/)[4]
+      if cmd == 'q'
         exit     
-      elsif str == 'wq'
+      elsif cmd == 'wq'
         File.open(ARGV[0], "w") do |f| 
-          $buffer.each do |str|
-            f.puts(str)
+          $buffer.each do |cmd|
+            f.puts(cmd)
           end
         end    
         exit
-      elsif str == 'a'
-        while str = STDIN.gets.chomp
-          break if str == '.'
-          $buffer.insert($position,str)        
+      elsif cmd == 'a'
+        cnt = 0
+        while cmd = STDIN.gets.chomp
+          break if cmd == '.'
+          $buffer.insert(address.to_i+cnt,cmd)        
+          cnt = cnt + 1
         end
-      elsif str.match(/^[0-9]/)
-        $position = str.to_i
-        p $buffer[$position-1].chomp
-      elsif str == ''
+      elsif cmd == 'p'
+        ((address2.gsub(",","").to_i-address.split(',')[0].to_i)+1).times{|i|
+          p $buffer[i+address.split(',')[0].to_i-1].chomp
+        }
+      elsif cmd == 'd'
+          $buffer.delete_at($position) 
+      elsif cmd == '' && address.nil?
+        p "ddd"
         $position = $position + 1
+      elsif address.match(/^[0-9]/)
+        $position = address.to_i
+        p $buffer[$position-1].chomp
       end
     end
   end
