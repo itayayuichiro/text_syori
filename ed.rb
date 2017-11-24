@@ -48,7 +48,6 @@ class Ed
       elsif cmd == 'd'
           $buffer.delete_at($position) 
       elsif cmd == '' && address.nil?
-        p "ddd"
         $position = $position + 1
       elsif address.match(/^[0-9]/)
         $position = address.to_i
