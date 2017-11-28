@@ -6,6 +6,7 @@ class Ed
     f.each{|line|
      $buffer.push(line)
     }
+    $position = $buffer.length-1
     mode = nil
     while str = STDIN.gets
       read(str.chomp)
@@ -19,7 +20,7 @@ class Ed
     cmnd = '(wq|[acdgijnpqrw=]|\z)'
     prmt = '(.*)'
     unless str.match(/\A(#{addr}(,#{addr})?)?#{cmnd}(#{prmt})?\z/)
-      p "?"
+      puts "?"
     else
       address = str.match(/\A(#{addr}(,#{addr})?)?#{cmnd}(#{prmt})?\z/)[1]
       address2 = str.match(/\A(#{addr}(,#{addr})?)?#{cmnd}(#{prmt})?\z/)[2]
@@ -32,21 +33,32 @@ class Ed
           $buffer.each do |cmd|
             f.puts(cmd)
           end
-        end    
+        end
         exit
       elsif cmd == 'w'
         File.open(ARGV[0], "w") do |f| 
           $buffer.each do |cmd|
             f.puts(cmd)
           end
-        end    
-      elsif cmd == 'a'
-        cnt = 0
-        while cmd = STDIN.gets.chomp
-          break if cmd == '.'
-          $buffer.insert(address.to_i+cnt,cmd)        
-          cnt = cnt + 1
         end
+      #後ろに挿入
+      elsif cmd == 'a'
+        if address.nil?
+          cnt = 0
+          while cmd = STDIN.gets.chomp
+            break if cmd == '.'
+            $buffer.insert($position+cnt,cmd)
+            cnt = cnt + 1
+          end
+        else
+          cnt = 0
+          while cmd = STDIN.gets.chomp
+            break if cmd == '.'
+            $buffer.insert(address.to_i+cnt,cmd)
+            cnt = cnt + 1
+          end
+        end
+      #前に挿入
       elsif cmd == 'i'
         cnt = 0
         while cmd = STDIN.gets.chomp
@@ -54,16 +66,23 @@ class Ed
           $buffer.insert(address.to_i+cnt-1,cmd)        
           cnt = cnt + 1
         end
+      #出力
       elsif cmd == 'p'
-        ((address2.gsub(",","").to_i-address.split(',')[0].to_i)+1).times{|i|
-          p $buffer[i+address.split(',')[0].to_i-1].chomp
-        }
+        if address.nil?
+            puts $buffer[$position].chomp
+        else
+          ((address2.gsub(",","").to_i-address.split(',')[0].to_i)+1).times{|i|
+            puts $buffer[i+address.split(',')[0].to_i-1].chomp
+          }
+        end
+      #結合
       elsif cmd == 'j'
         str=""
         ((address2.gsub(",","").to_i-address.split(',')[0].to_i)+1).times{|i|
           str = str+$buffer.shift(address.split(',')[0].to_i).join("").chomp
         }
         $buffer.insert(address.split(',')[0].to_i-1,str)
+      #
       elsif cmd == 'c'
         ((address2.gsub(",","").to_i-address.split(',')[0].to_i)+1).times{|i|
           $buffer.shift(address.split(',')[0].to_i).join("").chomp
@@ -82,18 +101,17 @@ class Ed
           $buffer.delete_at($position) 
       elsif cmd == 'n'
         ((address2.gsub(",","").to_i-address.split(',')[0].to_i)+1).times{|i|
-          p "#{i+address.split(',')[0].to_i} #{$buffer[i+address.split(',')[0].to_i-1].chomp}"
+          puts "#{i+address.split(',')[0].to_i} #{$buffer[i+address.split(',')[0].to_i-1].chomp}"
         }
       elsif cmd == '='
-          p $buffer.length
-      elsif address.match(/^[0-999]/)
+          puts $buffer.length
+      elsif address.match(/\d+/)
         $position = address.to_i
-        p $buffer[$position-1].chomp
+        puts $buffer[$position-1].chomp
+      else
+        puts "?"
       end
     end
-  end
-  def print
-    
   end
 end
 Ed.new
