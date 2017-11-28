@@ -24,13 +24,25 @@ class Whitespace
 			imp = @@imps[imp]
 			case imp
 			when :stack_mnpl
-				unless command = scanner.scan(/ |[ \n\t]/)
+				unless command = scanner.scan(/ |\n[ \n\t]/)
 					raise Exception, 'missing IMP'
 				end
 			when :arithmetic
+				unless command = scanner.scan(/ [ \t\n]|\t[ \t]/)
+					raise Exception, 'missing IMP'
+				end				
 			when :heap_access
+				unless command = scanner.scan(/ |\t/)
+					raise Exception, 'missing IMP'
+				end
 			when :flow_control
+				unless command = scanner.scan(/ [ \t\n]|\t[ \t]|\n\n/)
+					raise Exception, 'missing IMP'
+				end				
 			when :i_o
+				unless command = scanner.scan(/ [ \t]|\t[ \t]/)
+					raise Exception, 'missing IMP'
+				end				
 			end
 			#コマンド切り出し
 			#パラメータ切り出し
