@@ -84,8 +84,8 @@ class Ed
         ((address2.gsub(",","").to_i-address.split(',')[0].to_i)+1).times{|i|
           p "#{i+address.split(',')[0].to_i} #{$buffer[i+address.split(',')[0].to_i-1].chomp}"
         }
-      elsif cmd == '' && address.nil?
-        $position = $position + 1
+      elsif cmd == '='
+          p $buffer.length
       elsif address.match(/^[0-999]/)
         $position = address.to_i
         p $buffer[$position-1].chomp
