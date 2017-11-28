@@ -82,7 +82,7 @@ class Ed
           str = str+$buffer.shift(address.split(',')[0].to_i).join("").chomp
         }
         $buffer.insert(address.split(',')[0].to_i-1,str)
-      #
+      #置換
       elsif cmd == 'c'
         ((address2.gsub(",","").to_i-address.split(',')[0].to_i)+1).times{|i|
           $buffer.shift(address.split(',')[0].to_i).join("").chomp
@@ -92,13 +92,19 @@ class Ed
           break if cmd == '.'
           $buffer.insert(address.split(',')[0].to_i-1,cmd)
         end
+      #諦め
       elsif cmd == 'g'
         buffer = []
         ((address2.gsub(",","").to_i-address.split(',')[0].to_i)+1).times{|i|
           buffer.push($buffer.shift(address.split(',')[0].to_i).join("").chomp)
         }
+      #削除
       elsif cmd == 'd'
-          $buffer.delete_at($position) 
+        if address.nil?
+         $buffer.delete_at($position)
+        else
+          $buffer.slice!(address.split(',')[0].to_i-1..address2.gsub(",","").to_i-1)
+        end
       elsif cmd == 'n'
         ((address2.gsub(",","").to_i-address.split(',')[0].to_i)+1).times{|i|
           puts "#{i+address.split(',')[0].to_i} #{$buffer[i+address.split(',')[0].to_i-1].chomp}"
