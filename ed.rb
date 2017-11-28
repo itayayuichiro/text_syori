@@ -60,11 +60,20 @@ class Ed
         end
       #前に挿入
       elsif cmd == 'i'
-        cnt = 0
-        while cmd = STDIN.gets.chomp
-          break if cmd == '.'
-          $buffer.insert(address.to_i+cnt-1,cmd)        
-          cnt = cnt + 1
+        if address.nil?
+          cnt = 0
+          while cmd = STDIN.gets.chomp
+            break if cmd == '.'
+            $buffer.insert($position+cnt-1,cmd)        
+            cnt = cnt + 1
+          end  
+        else
+          cnt = 0
+          while cmd = STDIN.gets.chomp
+            break if cmd == '.'
+            $buffer.insert(address.to_i+cnt-1,cmd)        
+            cnt = cnt + 1
+          end
         end
       #出力
       elsif cmd == 'p'
