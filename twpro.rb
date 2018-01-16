@@ -64,7 +64,7 @@ class Twpro
         parser(:call_function, param, param2)
       when :make_variable
         param = line.split(/フォロー/)[0].delete(' ')
-        param2 = line.split(/フォロー/)[1].gsub(/ |\n/, "")
+        param2 = line.split(/フォロー/)[1].gsub(/ |\n/, '')
         parser(:make_variable, param,param2)
       end
       }
@@ -101,10 +101,10 @@ class Twpro
     puts param[0]
   end
   def evaluate_make_function(*param)
-    @@functions[:name] = "base"
+    @@functions[param[0]] = param[1]
   end
   def evaluate_make_variable(*param)
-    @@functions[:name] = "base"
+    @@variables[param[0]] = param[1]
   end
   def evaluate_end(*param)
     exit
