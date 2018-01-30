@@ -11,8 +11,10 @@ class Twpro
   def initialize
     f = open(ARGV[0])
     @scanner = StringScanner.new(f.read)
-    parser
-    eval
+    sentence
+    evaluate
+    p @@functions
+
   end
   @@imps = {
     'ログイン' => :start,
@@ -27,142 +29,104 @@ class Twpro
   def unget_token
     @scanner.unscan
   end
-  def parser
+  def sentence
     while !@scanner.eos?
-      @tokenize = tokenize
-      token = @@imps[@tokenize]
-      param1,param2 = nil
-      p "token:#{token}"
-      case token
-        # コードの始まり
-        when :start
-          block = [token]
-        # 出力
-        when :print
-          block = [token, tokenize]
-        # 関数生成
-        when :make_function
-          block = [token, tokenize]
-        # 関数
-        when :call_function
-          block = [token, tokenize]
-        # インデント
-        when :indent
-          @@indent = @@indent + 1
-          p "next#{@@indent}"
-          next
-        else
-            p "aaaa"
-            @tokenize2 = tokenize
-            token2 = @@imps[@tokenize2]
-            # 変数生成
-            if token2 == :make_variable 
-              block = [token2,@tokenize,tokenize]
-              token = :make_variable
-            # 繰り返し
-            elsif token2 == :loop
-              block = [token2,@tokenize.to_i]
-              token = :loop
-            end
-        end
-        if token == :start or token == :print or token == :loop or token == :make_function or token == :call_function or token == :make_variable 
-          if @@indent == 1
-            @@result[-1].push(block)
-            @@indent = 0
-          elsif @@indent == 2
-            @@result[-1][-1].push(block)
-            @@indent = 0
-          else
-            @@result.push(block)
+      block = parser
+      next if block.nil?
+      if block[0] == :start or block[0] == :print or block[0] == :loop or block[0] == :make_function or block[0] == :call_function or block[0] == :make_variable or block[0] == :end 
+        array_str = "@@result"
+        @@indent.times {
+          array_str = array_str + "[-1]"
+        }
+        eval(array_str+".push(#{block})")
+        @@indent = 0
+      end
+    end  
+    p @@result  
+  end
+  def parser
+    @tokenize = tokenize
+    token = @@imps[@tokenize]
+    param1,param2 = nil
+    case token
+      # コードの始まり
+      when :start
+        block = [token]
+      # 出力
+      when :print
+        block = [token, tokenize]
+      # 関数生成
+      when :make_function
+        block = [token, tokenize]
+      # 関数呼び出し
+      when :call_function
+        block = [token, tokenize]
+      # インデント
+      when :indent
+        @@indent = @@indent + 1
+      # コードの終わり
+      when :end
+        block = [token]
+      else
+          # 一個先を見て判定
+          @tokenize2 = tokenize
+          token2 = @@imps[@tokenize2]
+          # 変数生成
+          if token2 == :make_variable 
+            block = [token2,@tokenize,tokenize]
+            token = :make_variable
+          # 繰り返し
+          elsif token2 == :loop
+            block = [token2,@tokenize.to_i]
+            token = :loop
           end
-        end
-    end
-    p @@result
+      end
+    return block
   end
 
   def tokenize
     token = @scanner.scan(/(ログイン|ツイート|リスト作成|リスト|ログアウト|フォロー|\'.+?\'|  |RT|:.+?\n|\n.+? |\d+|.+? | .+?\n|)[\n]*/)
     unless token.match(/  /)
       token = token.delete(" ")
-    end
-    p token.chomp
-      
+    end      
     return token.chomp
-=begin
-      unless imp = line.scan(/ログイン|ツイート|リスト作成|リスト|ログアウト|フォロー/)[0]
-        raise Exception, '字句解析エラー'
-      end
-      # debug(imp)
-      # debug(@@imps[imp])
-      case @@imps[imp]
-      when :start
-        parser(:start, nil, nil)
-      when :end
-        parser(:end, nil, nil)
-      when :print
-        param = line.scan(/\'.+?\'/)[0]
-        parser(:print, param, nil)
-      when :loop
-        param = line.scan(/^\dRT/)[0].delete("RT")
-          # unless imp = line.scan(/\d+RT|ツイート|リスト/)[0]
-          #   raise Exception, '字句解析エラー'
-          # end
-          # case @@imps[imp]
-          # when :print
-          #   param = line.scan(/\'.+?\'/)[0]
-          #   param2 = parser(:print, param, nil)
-          # end
-        param2 = line.scan(/^\dRT/)[0].delete("RT")
-        parser(:loop, param, param2)
-      when :make_function
-        param = line.scan(/^リスト作成:/)[0].delete("リスト作成:")
-        param2 = nil
-        parser(:make_function, param,param2)
-      when :call_function
-        param = line.scan(/^リスト:/)[0].delete("リスト:")
-        param2 = nil
-        parser(:call_function, param, param2)
-      when :make_variable
-        param = line.split(/フォロー/)[0].delete(' ')
-        param2 = line.split(/フォロー/)[1].gsub(/ |\n/, '')
-        parser(:make_variable, param,param2)
-      end
-      }
-      debug(@@result)
-=end
 	end
 
-  # def parser(imp,param,param2)
-  #   @@result.push([imp,param,param2])
-  #   return [imp,param,param2]
-  # end
-  def eval
+  def evaluate
     @@result.each do |block|
-      send("evaluate_#{block[0].to_s.delete(':')}",block[1])
+      eval_send_method(block)
     end
+  end
+  def eval_send_method(block)
+      blocks_str = "send('evaluate_#{block[0].to_s.delete(':')}'"
+      1.upto(block.length-1){|i|
+        blocks_str = blocks_str + ",block[#{i}]"
+      }
+      eval_str = blocks_str+')'
+      eval(eval_str)
   end
 
   def evaluate_loop(*param)
-    # unless imp = scanner.scan(/ ツイート| リスト/)
-    #   raise Exception, 'missing IMP'
-    # end
-    # imp = @@imps[imp.delete(' ')]
-    # 3.times {
-    #   case imp
-    #   when :print
-    #     evaluate_print(scanner)
-    #     scanner.unscan
-    # }
-    # scanner.scan
+    param[0].to_i.times {
+      eval_send_method(param[1])
+    }
   end
   def evaluate_print(*param)
     puts param[0]
   end
   def evaluate_call_function(*param)
-    puts param[0]
+    blocks = @@functions[param[0].to_s.delete(':')]
+    blocks.each do |block|
+      eval_send_method(block)
+    end
+    return param[0]
   end
   def evaluate_make_function(*param)
-    @@functions[param[0]] = param[1]
+    array = []
+    1.upto(param.length-1){|i|
+      array.push(param[i])
+    }
+    @@functions[param[0].to_s.delete(':')] = array
   end
   def evaluate_make_variable(*param)
     @@variables[param[0]] = param[1]
