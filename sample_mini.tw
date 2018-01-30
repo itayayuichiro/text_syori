@@ -1,0 +1,12 @@
+ログイン
+ツイート'プログラムスタート'
+3RT
+  3RT
+    ツイート'繰り返し'
+リスト作成:hoge_hoge
+  number フォロー 1
+  10RT
+    ツイート'Hello World'
+4RT
+  リスト:hoge_hoge
+ログアウト
